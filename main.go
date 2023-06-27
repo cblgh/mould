@@ -122,6 +122,7 @@ func main() {
 	f := NewFile(formPackageName)
 	var contentBits []Code
 	var answer []Code
+	var resParse []Code
 	for _, input := range values {
 		switch input.element {
 		case "form-title":
@@ -152,6 +153,7 @@ func main() {
 			template = append(template, el)
 			template = append(template, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
 		case "input":
 			key, title := formatKeyAndTitle(input)
 			template = append(template, "<div>")
@@ -160,6 +162,7 @@ func main() {
 			template = append(template, el)
 			template = append(template, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
 		case "number":
 			optionsList := strings.Split(input.value, ",")
 			var options string
@@ -175,6 +178,7 @@ func main() {
 			template = append(template, el)
 			template = append(template, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
 		case "range":
 			optionsList := strings.Split(input.value, ",")
 			var options string
@@ -190,6 +194,7 @@ func main() {
 			template = append(template, el)
 			template = append(template, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
 		case "radio":
 			options := strings.Split(input.value, ",")
 			key, title := formatKeyAndTitle(input)
@@ -209,6 +214,7 @@ func main() {
 			}
 			template = append(template, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
 		}
 	}
 
@@ -218,6 +224,18 @@ func main() {
 	f.Const().Id("BasicPassword").Op("=").Lit(setPassword)
 	f.Type().Id("FormContent").Struct(contentBits...)
 	f.Type().Id("FormAnswer").Struct(answer...)
+
+	f.Func().Params(
+	Id("answer").Id("*FormAnswer"),
+).Id("ParsePost").Params(
+	Id("req").Op("*").Qual("net/http", "Request"),
+).Block(resParse...)
+
+fmt.Printf("%#v", f)
+// Output:
+// func (a A) foo(b, c string) string {
+// 	return b + c
+// }
 
 	err := os.MkdirAll(formPackageName, 0777)
 	if err != nil {
