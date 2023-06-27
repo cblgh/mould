@@ -28,15 +28,13 @@ number[Moni]#amount = min=1, max=100, value=1
 radio[Sky type]     = Sunny, Rainy, Moony
 ```
 
-* The very first bit on the left of the equals sign is the element, often html form elements
-  but some of the elements are used for controlling themes or page titles of the form (these
-  are prefix `form-`). 
+* On the very left of the equals (=) sign is the **element**. Elements are a mix of html form elements (`input`, `textarea`) and elements for controlling themes (`form-bg`) or page titles (`form-title`)of the form (this latter group has the prefix `form-`). 
   * Examples: `input`, `radio`, `form-title`, `textarea`
-* `= <stuff on the right side>` contains the content of the specified element. Typically, this will be used as
+* `= <stuff on the right side>` contains the **content** of the specified element. Typically, this will be used as
   part of the form element's placeholder, but in some cases (range, radio) it will set options,
   and in others (form-bg/form-fg) it will set colours or the page title (`form-title`).
-* `[title]` setst the title that will be used for that form element's label
-* `#key` sets an explicit key, which will be used instead of the title
+* `[title]` sets the **title** that will be used for that form element's label
+* `#key` sets an explicit **key**, which will be used instead of the title for things like keys on the input (useful if you want shorter html ids)
 
 Currently supported html form elements:
 
@@ -62,3 +60,5 @@ The local json file is used to repopulate the form database between server resta
 
 ## Why did you do this?
 Yes, why indeed
+
+Well it's done now!!!
