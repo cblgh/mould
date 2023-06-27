@@ -52,9 +52,9 @@ From the input syntax I generate the html page that will be served for the form 
 code, representing the response model. The generated go code is used to parse responses that
 the form server receives.
 
-All responses are saved in a local json file everytime the come through, and respondents on
-submitting a form are redirected to a static url containing their responses (should they forget
-what they responded and want to refresh their memory).
+All responses are saved in a local json file every time they come through. Respondents, on
+submitting, are redirected to a static url containing their responses, should they forget
+what they responded and want to refresh their memory.
 
 The local json file is used to repopulate the form database between server restarts.
 
