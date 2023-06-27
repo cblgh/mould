@@ -6,7 +6,7 @@ import (
 	"os"
 	"syscall"
 	"net/http"
-	"formin/myform"
+	"mould/myform"
 	crand "crypto/rand"
 	"math/big"
 	"html/template"

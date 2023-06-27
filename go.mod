@@ -1,4 +1,4 @@
-module formin
+module mould
 
 go 1.19
 

@@ -1,5 +1,5 @@
 form-title          = Nonsensical Form
-form-desc           = Hey! Hello! This is a nonsensical form served by <untitled form>
+form-desc           = Hey! Hello! This is a nonsensical form served by Mould!
 form-bg             = wheat
 form-titlecolor     = purple
 form-fg             = black
