@@ -104,6 +104,7 @@ const htmlTemplate = `<!DOCTYPE html>
 			background: {{ .Background }};
 			color: {{ .Body }};
 			padding-left: 2rem;
+			padding-right: 2rem;
 			padding-top: 1rem;
 		}
 		h1 {
