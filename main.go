@@ -253,9 +253,9 @@ func main() {
 				radioValue := strings.ToLower(options[i])
 				radioId := fmt.Sprintf(`%s-option-%s`, key, radioValue)
 				htmlList = append(htmlList, "<span>")
-				htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, radioId, options[i]))
 				el := fmt.Sprintf(`<input type="radio" id="%s" value="%s" name="%s"/>`, radioId, radioValue, key)
 				htmlList = append(htmlList, el)
+				htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, radioId, options[i]))
 				htmlList = append(htmlList, "</span>")
 
 			}
