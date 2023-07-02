@@ -49,6 +49,13 @@ func generateResponseIdentifier() string {
 	return identifier.String()
 }
 
+func ThrowBasicAuthHeader (res http.ResponseWriter) {
+		// 1: first set the header:
+		res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		// 2: the emit an error
+		http.Error(res, "Unauthorized", http.StatusUnauthorized)	
+}
+
 func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	// handle 404
 	// if req.URL.Path != "/" {
@@ -56,14 +63,21 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	// 	return
 	// }
 
-	// TODO figure out how tf to basic X)
-	// if myform.BasicPassword != "" {
-	// 	// 1: first set the header:
-	// 	res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-	// 	// 2: the emit an error
-	// 	http.Error(res, "Unauthorized", http.StatusUnauthorized)	
-	// 	return
-	// }
+	// we have basic auth set!
+	if myform.BasicPassword != "" {
+		// try to extract user name and password from request
+		uname, pw, ok := req.BasicAuth()
+		if !ok {
+			ThrowBasicAuthHeader(res)
+			return
+		}
+		valid := (myform.BasicUser == uname && myform.BasicPassword == pw)
+		if !valid {
+			ThrowBasicAuthHeader(res)
+			return
+		}
+		// else: basic auth was on, and we received correct credentials: please proceed!
+	}
 	if req.Method == "POST" {
 		answer := myform.FormAnswer{}
 		answer.ParsePost(req)
