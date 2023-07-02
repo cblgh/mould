@@ -71,14 +71,14 @@ type TemplateData struct {
 
 var stylesheetTemplate = `<style>
 		html {
-			background: {{ .Background }};
-			color: {{ .Body }};
+			{{ if .Background }} background: {{ .Background }}; {{ end }}
+			{{ if .Body }} color: {{ .Body }}; {{ end }}
 			padding-left: 2rem;
 			padding-right: 2rem;
 			padding-top: 1rem;
 		}
 		h1 {
-			color: {{ .TitleColor }};
+			{{ if .TitleColor }} color: {{ .TitleColor }}; {{ end }}
 		}
 		* {
 			padding: 0;
