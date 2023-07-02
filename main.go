@@ -59,10 +59,37 @@ type Theme struct {
 	background, title, body string
 }
 
+type StyleData struct {
+	Background, TitleColor, Body template.HTML
+}
+
 type TemplateData struct {
-	Background, TitleColor, Body, Content template.HTML
+	Content template.HTML
 	Title string
 }
+
+var stylesheetTemplate = `<style>
+		html {
+			background: {{ .Background }};
+			color: {{ .Body }};
+			padding-left: 2rem;
+			padding-right: 2rem;
+			padding-top: 1rem;
+		}
+		h1 {
+			color: {{ .TitleColor }};
+		}
+		* {
+			padding: 0;
+			margin-bottom: 0.5rem;
+		}
+		div {
+			display: grid;
+			max-width: 600px;
+			align-items: center;
+		}
+</style>
+`
 
 func parseFormat(format string) []genValue {
 	pattern := regexp.MustCompile(`(form-\w+)|(\S*)(\[.*\])([#]\S+)?`)
@@ -95,34 +122,31 @@ func parseFormat(format string) []genValue {
 	return genList
 }
 
-const htmlTemplate = `<!DOCTYPE html>
+var htmlTemplate = `<!DOCTYPE html>
 <html>
 	<head>
 		<title>{{ .Title }}</title>
-		<style>
-		html {
-			background: {{ .Background }};
-			color: {{ .Body }};
-			padding-left: 2rem;
-			padding-right: 2rem;
-			padding-top: 1rem;
-		}
-		h1 {
-			color: {{ .TitleColor }};
-		}
-		* {
-			padding: 0;
-			margin-bottom: 0.5rem;
-		}
-		div {
-			display: grid;
-			max-width: 600px;
-			align-items: center;
-		}
-		</style>
+		%SENTINEL%
 	</head>
 	<body>
 	{{ .Content }}
+	</body>
+</html>`
+
+var responseTemplate = `<!DOCTYPE html>
+<html>
+    <head>
+    <title>Form submitted</title>
+		%SENTINEL%
+    <body>
+			<h1>Response successful</h1>
+			<p>Your response: </p>
+			<pre>
+			<code>
+{{ .Data }}
+			</code>
+			</pre>
+			<p><b>Bookmark this page</b> as a receipt or if you want to review what you responded some time in the future</p>
 	</body>
 </html>`
 
@@ -141,8 +165,11 @@ func main() {
 	var htmlList []string
 	var theme Theme
 	var setPassword string
+	setUser := "mouldy" // default user is "mouldy". only used if password is set, and can be changed with `form-user`
 	var pageTitle string
 	var formatFp string
+	var stylesheetFp string
+	flag.StringVar(&stylesheetFp, "stylesheet", "", "a single css file containing styles that will be applied to the form (fully replaces mould's default styling)")
 	flag.StringVar(&formatFp, "input", "", "a file containing the form format to generate a form server using")
 	flag.Parse()
 	if formatFp == "" {
@@ -177,6 +204,10 @@ func main() {
 			setPassword = input.value
 			// information used for basic auth, limiting access to the form
 			contentBits = append(contentBits, Id("Password").String())
+		case "form-user":
+			setUser = input.value
+			// information used for basic auth, limiting access to the form
+			contentBits = append(contentBits, Id("User").String())
 		case "form-bg":
 			fmt.Println("bg")
 			theme.background = input.value
@@ -270,6 +301,7 @@ func main() {
 
 	// set BasicPassword const
 	f.Const().Id("BasicPassword").Op("=").Lit(setPassword)
+	f.Const().Id("BasicUser").Op("=").Lit(setUser)
 	// generate FormContent struct
 	f.Type().Id("FormContent").Struct(contentBits...)
 	// generate FormAnswer struct
@@ -281,6 +313,9 @@ func main() {
 	).Id("ParsePost").Params(
 		Id("req").Op("*").Qual("net/http", "Request"),
 	).Block(resParse...)
+
+	// generate ResponderData struct
+	f.Type().Id("ResponderData").Struct(Id("Data").String())
 
 	fmt.Printf("%#v", f)
 
@@ -296,23 +331,50 @@ func main() {
 		fmt.Println(genCodeErr)
 	}
 	var data TemplateData
+	data.Title = pageTitle
 	data.Content = template.HTML(strings.Join(htmlList, "\n"))
-	fmt.Println(theme)
+
+	var styleData StyleData
 	if theme.background != "" {
-		data.Background = template.HTML(theme.background)
+		styleData.Background = template.HTML(theme.background)
 	}
 	if theme.body != "" {
-		data.Body = template.HTML(theme.body)
+		styleData.Body = template.HTML(theme.body)
 	}
 	if theme.title != "" {
-		data.TitleColor = template.HTML(theme.title)
+		styleData.TitleColor = template.HTML(theme.title)
 	}
-	data.Title = pageTitle
-	// write the page htmlList
+
+	// stylesheet was passed with --stylesheet command: try to read it and then 
+	// *fully* replace the contents of stylesheetTemplate with the passed in style
+	if stylesheetFp != "" {
+		b, err := os.ReadFile(stylesheetFp)
+		if err == nil {
+			fmt.Println(string(b))
+			stylesheetTemplate = fmt.Sprintf("<style>%s</style>", string(b))
+		} else {
+			fmt.Println("err reading stylesheet", err)
+		}
+	}
+
+	// render the stylesheet 
+	t := template.Must(template.New("").Parse(stylesheetTemplate))
 	var buf bytes.Buffer
-	t := template.Must(template.New("").Parse(htmlTemplate))
+	t.Execute(&buf, styleData)
+
+	// insert the stylesheet into the head of the document
+	fmt.Println("stylesheet post templating", buf.String())
+	htmlTemplate = strings.ReplaceAll(htmlTemplate, "%SENTINEL%", buf.String())
+	responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", buf.String())
+
+	// write the page htmlList
+	t = template.Must(template.New("").Parse(htmlTemplate))
 	t.Execute(&buf, data)
 	indexWriteErr := os.WriteFile("index-template.html", buf.Bytes(), 0777)
+	if indexWriteErr != nil {
+		fmt.Println(indexWriteErr)
+	}
+	indexWriteErr = os.WriteFile("response-template.html", []byte(responseTemplate), 0777)
 	if indexWriteErr != nil {
 		fmt.Println(indexWriteErr)
 	}

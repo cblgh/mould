@@ -24,6 +24,8 @@ func (h RequestHandler) ErrorRoute(res http.ResponseWriter, req *http.Request) {
 
 //go:embed index-template.html
 var htmlContents string
+//go:embed response-template.html
+var responseContents string
 
 var responses map[string]string
 
@@ -55,7 +57,13 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	// }
 
 	// TODO figure out how tf to basic X)
-	// res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	// if myform.BasicPassword != "" {
+	// 	// 1: first set the header:
+	// 	res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	// 	// 2: the emit an error
+	// 	http.Error(res, "Unauthorized", http.StatusUnauthorized)	
+	// 	return
+	// }
 	if req.Method == "POST" {
 		answer := myform.FormAnswer{}
 		answer.ParsePost(req)
@@ -78,26 +86,7 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-type ResponderData struct {
-	Data string
-}
-
-const responseTemplate = `<!DOCTYPE html>
-<html>
-    <head>
-    <title>Form submitted</title>
-    <body>
-    <h1>Response successful</h1>
-    <p>Your response: </p>
-    <pre>
-    <code>
-{{ .Data }}
-    </code>
-    </pre>
-    <p><b>Bookmark this page</b> as a receipt or if you want to review what you responded some time in the future</p>
-</body>
-</html>`
-
+// TODO (2023-06-02): improve json output
 const dataName = "latest-form-data.json"
 func persistData() {
 	b, err := json.Marshal(responses)
@@ -137,8 +126,8 @@ func Serve() {
 	http.HandleFunc("/responder/", func(res http.ResponseWriter, req *http.Request) {
 		id := strings.TrimPrefix(req.URL.Path, "/responder/")
 			if val, ok := responses[id]; ok {
-				t := template.Must(template.New("").Parse(responseTemplate))
-				err := t.Execute(res, ResponderData{val})
+				t := template.Must(template.New("").Parse(responseContents))
+				err := t.Execute(res, myform.ResponderData{val})
 				if errors.Is(err, syscall.EPIPE) {
 					fmt.Println("recovering from broken pipe")
 					return

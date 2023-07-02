@@ -3,6 +3,8 @@ form-desc           = Hey! Hello! This is a nonsensical form served by Mould!
 form-bg             = wheat
 form-titlecolor     = purple
 form-fg             = black
+form-user           = mouldy
+form-password       = ohi
 input[Name]         = Preferred moniker
 textarea[Address]   = Your fediverse residence, else null
 number[Moni]#amount                 = min=1, max=100, value=1
