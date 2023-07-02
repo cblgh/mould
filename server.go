@@ -27,7 +27,7 @@ var htmlContents string
 //go:embed response-template.html
 var responseContents string
 
-var responses map[string]string
+var responses map[string]map[string]string
 
 // used for generating a random identifier
 const characterSet = "abcdedfghijklmnopqrstABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -82,13 +82,27 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		answer := myform.FormAnswer{}
 		answer.ParsePost(req)
 		fmt.Println("received a POST")
+		// we're gonna do a lil tricky trick to get a nicer json format to persist
+		//
+		// first we marshal the answer struct into json. then we *unmarshal* it into a map, which we use to persist. this
+		// gets us a nice json representation that can live on disk and be easily manipulated with other tools, e.g. jq or
+		// little scripts
 		var b []byte
-		b, err := json.MarshalIndent(answer, "", "  ")
+		b, err := json.Marshal(answer)
 		if err != nil {
 			fmt.Println("marshal err", err)
+			fmt.Fprintf(res, "error processing your response, it has not been persisted - sorry! contact admin")
+			return
 		} else {
+			var m map[string]string
+			err = json.Unmarshal(b, &m)
+			if err != nil {
+				fmt.Println("err when doing unmarshalling trick", err)
+				fmt.Fprintf(res, "error processing your response, it has not been persisted - sorry! contact admin")
+				return
+			}
 			id := generateResponseIdentifier()
-			responses[id] = string(b)
+			responses[id] = m
 			persistData()
 			// redirect to response page
 			slug := fmt.Sprintf("/responder/%s", id)
@@ -134,14 +148,20 @@ func readPersistedData() {
 func Serve() {
 	port := 7272
 	handler := RequestHandler{}
-	responses = make(map[string]string)
+	responses = make(map[string]map[string]string)
 	readPersistedData()
 
 	http.HandleFunc("/responder/", func(res http.ResponseWriter, req *http.Request) {
 		id := strings.TrimPrefix(req.URL.Path, "/responder/")
 			if val, ok := responses[id]; ok {
+				niceJSON, err := json.MarshalIndent(val, "", "  ")
+				if err != nil {
+					fmt.Printf("err marshalling stored value for id %s\n", id)
+					fmt.Fprintf(res, "Had an error when formatting your stored response for web purposes. Contact admin")
+					return
+				}
 				t := template.Must(template.New("").Parse(responseContents))
-				err := t.Execute(res, myform.ResponderData{val})
+				err = t.Execute(res, myform.ResponderData{string(niceJSON)})
 				if errors.Is(err, syscall.EPIPE) {
 					fmt.Println("recovering from broken pipe")
 					return
