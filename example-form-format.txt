@@ -5,7 +5,9 @@ form-titlecolor     = purple
 form-fg             = black
 form-user           = mouldy
 form-password       = ohi
-input[Name]         = Preferred moniker
+!input[Name]         = Preferred moniker
 textarea[Address]   = Your fediverse residence, else null
 number[Moni]#amount                 = min=1, max=100, value=1
 radio[Sky type]                                         = Sunny, Rainy, Moony
+form-paragraph = just an explanatory paragraph :)
+email[Email address]         = .*@.*\..*

@@ -52,6 +52,7 @@ type genValue struct {
 	title string
 	value string
 	key string
+	required bool
 	options map[string]string
 }
 
@@ -92,7 +93,7 @@ var stylesheetTemplate = `<style>
 `
 
 func parseFormat(format string) []genValue {
-	pattern := regexp.MustCompile(`(form-\w+)|(\S*)(\[.*\])([#]\S+)?`)
+	pattern := regexp.MustCompile(`(form-\w+)|([!]?)(\S*)(\[.*\])([#]\S+)?`)
 	scanner := bufio.NewScanner(strings.NewReader(format))
 	var genList []genValue
 	for scanner.Scan() {
@@ -103,19 +104,21 @@ func parseFormat(format string) []genValue {
 		var v genValue 
 		v.value = strings.TrimSpace(line[splitterIndex+1:])
 		matches := pattern.FindStringSubmatch(left)
-		if len(matches) > 1 {
+		if len(matches) > 2 && matches[2] == "!" {
+			v.required = true
+		}
+		if matches[1] != "" {
 			v.element = strings.TrimSpace(matches[1])
-		}
-		if len(matches) > 2 && v.element == "" {
-			v.element = strings.TrimSpace(matches[2])
-		}
-		if len(matches) > 3 && matches[3] != "" {
-			// get everything except [thing] brackets
-			v.title = matches[3][1:len(matches[3])-1]
+		} else if matches[3] != "" {
+			v.element = strings.TrimSpace(matches[3])
 		}
 		if len(matches) > 4 && matches[4] != "" {
+			// get everything except [thing] brackets
+			v.title = matches[4][1:len(matches[4])-1]
+		}
+		if len(matches) > 5 && matches[5] != "" {
 			// remove initial #
-			v.key = strings.TrimSpace(matches[4][1:])
+			v.key = strings.TrimSpace(matches[5][1:])
 		}
 		genList = append(genList, v)
 	}
@@ -209,25 +212,26 @@ func main() {
 			// information used for basic auth, limiting access to the form
 			contentBits = append(contentBits, Id("User").String())
 		case "form-bg":
-			fmt.Println("bg")
 			theme.background = input.value
-			fmt.Println("ttl")
 		case "form-titlecolor":
 			theme.title = input.value
 		case "form-fg":
-			fmt.Println("bdy")
 			theme.body = input.value
 		}
 	}
 
 	htmlList = append(htmlList, `<form action="/" method="post">`)
 	for _, input := range values {
+			var required string 
+			if input.required {
+				required = `required`
+			}
 		switch input.element {
 		case "textarea":
 			key, title := formatKeyAndTitle(input)
 			htmlList = append(htmlList, "<div>")
 			htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, key, title))
-			el := fmt.Sprintf(`<textarea placeholder="%s" name="%s"></textarea>`, input.value, key)
+			el := fmt.Sprintf(`<textarea %s placeholder="%s" name="%s"></textarea>`, required, input.value, key)
 			htmlList = append(htmlList, el)
 			htmlList = append(htmlList, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
@@ -236,7 +240,26 @@ func main() {
 			key, title := formatKeyAndTitle(input)
 			htmlList = append(htmlList, "<div>")
 			htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, key, input.title))
-			el := fmt.Sprintf(`<input type="text" placeholder="%s" name="%s"/>`, input.value, key)
+			el := fmt.Sprintf(`<input type="text" %s placeholder="%s" name="%s"/>`, required, input.value, key)
+			htmlList = append(htmlList, el)
+			htmlList = append(htmlList, "</div>")
+			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
+		case "hidden":
+			key, title := formatKeyAndTitle(input)
+			htmlList = append(htmlList, "<div>")
+			el := fmt.Sprintf(`<input type="hidden" %s value="%s" name="%s"/>`, required, input.value, key)
+			htmlList = append(htmlList, el)
+			htmlList = append(htmlList, "</div>")
+			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
+			resParse = append(resParse, Id("answer").Dot(title).Op("=").Id("req").Dot("PostFormValue").Call(Lit(key)))
+		case "form-paragraph":
+			htmlList = append(htmlList, fmt.Sprintf(`<p>%s</p>`, input.value))
+		case "email":
+			key, title := formatKeyAndTitle(input)
+			htmlList = append(htmlList, "<div>")
+			htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, key, input.title))
+			el := fmt.Sprintf(`<input type="email" %s placeholder="email@provider.tld" pattern="%s", name="%s"/>`, required, input.value, key)
 			htmlList = append(htmlList, el)
 			htmlList = append(htmlList, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
@@ -252,7 +275,7 @@ func main() {
 			}
 			key, title := formatKeyAndTitle(input)
 			htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, key, title))
-			el := fmt.Sprintf(`<input type="number" %s name="%s"/>`, options, key)
+			el := fmt.Sprintf(`<input type="number" %s %s name="%s"/>`, required, options, key)
 			htmlList = append(htmlList, el)
 			htmlList = append(htmlList, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
@@ -268,7 +291,7 @@ func main() {
 			}
 			key, title := formatKeyAndTitle(input)
 			htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, key, title))
-			el := fmt.Sprintf(`<input type="range" %s name="%s"/>`, options, key)
+			el := fmt.Sprintf(`<input type="range" %s %s name="%s"/>`, required, options, key)
 			htmlList = append(htmlList, el)
 			htmlList = append(htmlList, "</div>")
 			answer = append(answer, Id(title).String().Tag(jsonTag(key)))
@@ -350,7 +373,6 @@ func main() {
 	if stylesheetFp != "" {
 		b, err := os.ReadFile(stylesheetFp)
 		if err == nil {
-			fmt.Println(string(b))
 			stylesheetTemplate = fmt.Sprintf("<style>%s</style>", string(b))
 		} else {
 			fmt.Println("err reading stylesheet", err)
@@ -363,7 +385,6 @@ func main() {
 	t.Execute(&buf, styleData)
 
 	// insert the stylesheet into the head of the document
-	fmt.Println("stylesheet post templating", buf.String())
 	htmlTemplate = strings.ReplaceAll(htmlTemplate, "%SENTINEL%", buf.String())
 	responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", buf.String())
 
