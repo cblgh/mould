@@ -117,7 +117,7 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 // TODO (2023-06-02): improve json output
 const dataName = "latest-form-data.json"
 func persistData() {
-	b, err := json.Marshal(responses)
+	b, err := json.MarshalIndent(responses, "", "  ")
 	if err != nil {
 		fmt.Println("failure persisting data", err)
 		return
