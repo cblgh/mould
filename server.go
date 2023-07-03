@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"flag"
 	"errors"
 	"os"
 	"syscall"
@@ -145,8 +146,7 @@ func readPersistedData() {
 	}
 }
 
-func Serve() {
-	port := 7272
+func Serve(port int) {
 	handler := RequestHandler{}
 	responses = make(map[string]map[string]string)
 	readPersistedData()
@@ -183,5 +183,8 @@ func Serve() {
 }
 
 func main () {
-	Serve()
+	var port int
+	flag.IntVar(&port, "port", 7272, "the port to serve the form server on")
+	flag.Parse()
+	Serve(port)
 }
