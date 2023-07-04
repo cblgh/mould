@@ -65,7 +65,7 @@ type StyleData struct {
 }
 
 type TemplateData struct {
-	Content template.HTML
+	Header, Footer, Content template.HTML
 	Title string
 }
 
@@ -132,7 +132,9 @@ var htmlTemplate = `<!DOCTYPE html>
 		%SENTINEL%
 	</head>
 	<body>
+	{{ if .Header }} {{ .Header }} {{ end }}
 	{{ .Content }}
+	{{ if .Footer }} {{ .Footer }} {{ end }}
 	</body>
 </html>`
 
@@ -163,6 +165,19 @@ func formatKeyAndTitle(v genValue) (string, string) {
 	return key, title
 }
 
+func readFileAsString(fp string) (string, bool) {
+	if fp != "" {
+		b, err := os.ReadFile(fp)
+		if err == nil {
+			return string(b), true
+		} else {
+			fmt.Printf("err reading %s", fp)
+			return "", false
+		}
+	}
+	return "", false
+}
+
 const formPackageName = "myform"
 func main() {
 	var htmlList []string
@@ -172,6 +187,9 @@ func main() {
 	var pageTitle string
 	var formatFp string
 	var stylesheetFp string
+	var headerFp, footerFp string
+	flag.StringVar(&headerFp, "html-header", "", "a single html file containing all of the html that will be presented immediately above the form contents")
+	flag.StringVar(&footerFp, "html-footer", "", "a single html file containing all of the html that will be presented immediately below the form contents")
 	flag.StringVar(&stylesheetFp, "stylesheet", "", "a single css file containing styles that will be applied to the form (fully replaces mould's default styling)")
 	flag.StringVar(&formatFp, "input", "", "a file containing the form format to generate a form server using")
 	flag.Parse()
@@ -307,7 +325,7 @@ func main() {
 				radioValue := strings.ToLower(options[i])
 				radioId := fmt.Sprintf(`%s-option-%s`, key, radioValue)
 				htmlList = append(htmlList, "<span>")
-				el := fmt.Sprintf(`<input type="radio" id="%s" value="%s" name="%s"/>`, radioId, radioValue, key)
+				el := fmt.Sprintf(`<input type="radio" %s id="%s" value="%s" name="%s"/>`, required, radioId, radioValue, key)
 				htmlList = append(htmlList, el)
 				htmlList = append(htmlList, fmt.Sprintf(`<label for="%s">%s</label>`, radioId, options[i]))
 				htmlList = append(htmlList, "</span>")
@@ -370,24 +388,28 @@ func main() {
 
 	// stylesheet was passed with --stylesheet command: try to read it and then 
 	// *fully* replace the contents of stylesheetTemplate with the passed in style
-	if stylesheetFp != "" {
-		b, err := os.ReadFile(stylesheetFp)
-		if err == nil {
-			stylesheetTemplate = fmt.Sprintf("<style>%s</style>", string(b))
-		} else {
-			fmt.Println("err reading stylesheet", err)
-		}
+	if str, ok := readFileAsString(stylesheetFp); ok {
+		stylesheetTemplate = fmt.Sprintf("<style>%s</style>", str)
+	}
+	// read any html header file that was declared
+	if str, ok := readFileAsString(headerFp); ok {
+		data.Header = template.HTML(str)
+	}
+	// read any html footer file that was declared
+	if str, ok := readFileAsString(footerFp); ok {
+		data.Footer = template.HTML(str)
 	}
 
 	// render the stylesheet 
 	t := template.Must(template.New("").Parse(stylesheetTemplate))
-	var buf bytes.Buffer
-	t.Execute(&buf, styleData)
+	var styleBuf bytes.Buffer
+	t.Execute(&styleBuf, styleData)
 
 	// insert the stylesheet into the head of the document
-	htmlTemplate = strings.ReplaceAll(htmlTemplate, "%SENTINEL%", buf.String())
-	responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", buf.String())
+	htmlTemplate = strings.ReplaceAll(htmlTemplate, "%SENTINEL%", styleBuf.String())
+	responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", styleBuf.String())
 
+	var buf bytes.Buffer
 	// write the page htmlList
 	t = template.Must(template.New("").Parse(htmlTemplate))
 	t.Execute(&buf, data)
