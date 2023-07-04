@@ -92,14 +92,14 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		b, err := json.Marshal(answer)
 		if err != nil {
 			fmt.Println("marshal err", err)
-			fmt.Fprintf(res, "error processing your response, it has not been persisted - sorry! contact admin")
+			fmt.Fprint(res, "error processing your response, it has not been persisted - sorry! contact admin")
 			return
 		} else {
 			var m map[string]string
 			err = json.Unmarshal(b, &m)
 			if err != nil {
 				fmt.Println("err when doing unmarshalling trick", err)
-				fmt.Fprintf(res, "error processing your response, it has not been persisted - sorry! contact admin")
+				fmt.Fprint(res, "error processing your response, it has not been persisted - sorry! contact admin")
 				return
 			}
 			id := generateResponseIdentifier()
@@ -111,7 +111,7 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		}
 	} else if req.Method == "GET" {
 		fmt.Println("GET")
-		fmt.Fprintf(res, htmlContents)
+		fmt.Fprint(res, htmlContents)
 	}
 }
 
@@ -157,7 +157,7 @@ func Serve(port int) {
 				niceJSON, err := json.MarshalIndent(val, "", "  ")
 				if err != nil {
 					fmt.Printf("err marshalling stored value for id %s\n", id)
-					fmt.Fprintf(res, "Had an error when formatting your stored response for web purposes. Contact admin")
+					fmt.Fprint(res, "Had an error when formatting your stored response for web purposes. Contact admin")
 					return
 				}
 				t := template.Must(template.New("").Parse(responseContents))
@@ -169,7 +169,7 @@ func Serve(port int) {
 					fmt.Println("err rendering reponder view", err)
 				}
 			} else {
-				fmt.Fprintf(res, "No such form responder id")
+				fmt.Fprint(res, "No such form responder id")
 			}
 	})
 	http.HandleFunc("/", handler.IndexRoute)

@@ -66,6 +66,7 @@ type StyleData struct {
 
 type TemplateData struct {
 	Header, Footer, Content template.HTML
+	Stylesheet template.CSS
 	Title string
 }
 
@@ -129,7 +130,11 @@ var htmlTemplate = `<!DOCTYPE html>
 <html>
 	<head>
 		<title>{{ .Title }}</title>
-		%SENTINEL%
+		{{ if .Stylesheet }} 
+		<style>
+			{{ .Stylesheet }} 
+		</style>
+		{{ end }}
 	</head>
 	<body>
 	{{ if .Header }} {{ .Header }} {{ end }}
@@ -389,7 +394,15 @@ func main() {
 	// stylesheet was passed with --stylesheet command: try to read it and then 
 	// *fully* replace the contents of stylesheetTemplate with the passed in style
 	if str, ok := readFileAsString(stylesheetFp); ok {
-		stylesheetTemplate = fmt.Sprintf("<style>%s</style>", str)
+		data.Stylesheet = template.CSS(str)
+		responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", fmt.Sprintf(`<style>%s</style>`, str))
+	} else {
+		// render the stylesheet 
+		t := template.Must(template.New("").Parse(stylesheetTemplate))
+		var styleBuf bytes.Buffer
+		t.Execute(&styleBuf, styleData)
+		data.Stylesheet = template.CSS(styleBuf.String())
+		responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", fmt.Sprintf(`<style>%s</style>`, styleBuf.String()))
 	}
 	// read any html header file that was declared
 	if str, ok := readFileAsString(headerFp); ok {
@@ -400,18 +413,9 @@ func main() {
 		data.Footer = template.HTML(str)
 	}
 
-	// render the stylesheet 
-	t := template.Must(template.New("").Parse(stylesheetTemplate))
-	var styleBuf bytes.Buffer
-	t.Execute(&styleBuf, styleData)
-
-	// insert the stylesheet into the head of the document
-	htmlTemplate = strings.ReplaceAll(htmlTemplate, "%SENTINEL%", styleBuf.String())
-	responseTemplate = strings.ReplaceAll(responseTemplate, "%SENTINEL%", styleBuf.String())
-
 	var buf bytes.Buffer
 	// write the page htmlList
-	t = template.Must(template.New("").Parse(htmlTemplate))
+	t := template.Must(template.New("").Parse(htmlTemplate))
 	t.Execute(&buf, data)
 	indexWriteErr := os.WriteFile("index-template.html", buf.Bytes(), 0777)
 	if indexWriteErr != nil {
