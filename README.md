@@ -15,6 +15,33 @@ go build server.go
 # Visit localhost:7272 in your browser to see the form in action! :)
 ```
 
+## Flags
+
+Generating the form page has a few options you can provide, other than the form input, such as
+providing custom html and styles:
+
+```
+go run main.go --help
+
+  -html-footer string
+        a single html file containing all of the html that will be presented immediately below the form contents
+  -html-header string
+        a single html file containing all of the html that will be presented immediately above the form contents
+  -input string
+        a file containing the form format to generate a form server using
+  -stylesheet string
+        a single css file containing styles that will be applied to the form (fully replaces mould's default styling)
+```
+
+Change the port the server will run on by passing the `--port` flag:
+
+```
+go run server.go --help
+
+  -port int
+        the port to serve the form server on (default 7272)
+``` 
+
 ## Example
 ```
 form-title          = Nonsensical Form
@@ -43,7 +70,25 @@ Currently supported html form elements:
 * input[range] as `range`
 * input[number] as `number`
 * radio buttons as `radio`
+* input[hidden] as `hidden`
+* required elements by prefixing a form element with `!`
+    * example: `!input[Your favourite tea] = compulsory tea information here` 
+* input[email] as `email`
+    * the right-hand side of the email element is the regex pattern that validates it
+    * `email[Email address] = .*@.*\..*
+* paragraph elements as `form-paragraph`
 * ~~checkboxes~~
+
+## Basic auth: Password protection
+
+Mould has support for [http basic
+authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) with the
+`form-password` and `form-user` form options. To enable basic auth set at least
+`form-password` in the form syntax input (default user: `mouldy`).
+
+Basic auth should be used in combination with https / TLS secured connections to prevent
+snooping the set password (http specifies that basic credentials are passed in plaintext with
+the request).
 
 ## How does it work?
 Messily! 
