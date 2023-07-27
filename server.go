@@ -153,24 +153,34 @@ func Serve(port int) {
 
 	http.HandleFunc("/responder/", func(res http.ResponseWriter, req *http.Request) {
 		id := strings.TrimPrefix(req.URL.Path, "/responder/")
-			if val, ok := responses[id]; ok {
-				niceJSON, err := json.MarshalIndent(val, "", "  ")
-				if err != nil {
-					fmt.Printf("err marshalling stored value for id %s\n", id)
-					fmt.Fprint(res, "Had an error when formatting your stored response for web purposes. Contact admin")
-					return
-				}
-				t := template.Must(template.New("").Parse(responseContents))
-				err = t.Execute(res, myform.ResponderData{string(niceJSON)})
-				if errors.Is(err, syscall.EPIPE) {
-					fmt.Println("recovering from broken pipe")
-					return
-				} else if err != nil {
-					fmt.Println("err rendering reponder view", err)
-				}
-			} else {
-				fmt.Fprint(res, "No such form responder id")
+		// response was not recorded
+		if _, ok := responses[id]; !ok {
+			fmt.Fprint(res, "No such form responder id")
+			return
+		}
+		// let's make sure to read the on-disk data and refresh the `responses` map, in case it has been hand-edited
+		// (hand-editing after the fact could allow for updating a "processed" flag, signaling to the form responder
+		// that e.g. their order has now been processed)
+		readPersistedData()
+		if val, ok := responses[id]; ok {
+			niceJSON, err := json.MarshalIndent(val, "", "  ")
+			if err != nil {
+				fmt.Printf("err marshalling stored value for id %s\n", id)
+				fmt.Fprint(res, "Had an error when formatting your stored response for web purposes. Contact admin")
+				return
 			}
+			t := template.Must(template.New("").Parse(responseContents))
+			err = t.Execute(res, myform.ResponderData{string(niceJSON)})
+			if errors.Is(err, syscall.EPIPE) {
+				fmt.Println("recovering from broken pipe")
+				return
+			} else if err != nil {
+				fmt.Println("err rendering reponder view", err)
+			}
+		} else {
+			fmt.Fprint(res, "No such form responder id")
+			return
+		}
 	})
 	http.HandleFunc("/", handler.IndexRoute)
 
