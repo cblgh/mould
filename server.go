@@ -54,7 +54,7 @@ func ThrowBasicAuthHeader (res http.ResponseWriter) {
 		// 1: first set the header:
 		res.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
 		// 2: the emit an error
-		http.Error(res, "Unauthorized", http.StatusUnauthorized)	
+		http.Error(res, "Unauthorized", http.StatusUnauthorized)
 }
 
 func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
@@ -103,7 +103,11 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 				return
 			}
 			id := generateResponseIdentifier()
+			// make sure we have the latest data (in case external writes have happened)
+			readPersistedData()
+			// write the new entry
 			responses[id] = m
+			// persist the data, including the new entry, to disk
 			persistData()
 			// redirect to response page
 			slug := fmt.Sprintf("/responder/%s", id)
