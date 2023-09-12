@@ -1,14 +1,14 @@
-form-title          = Nonsensical Form
-form-desc           = Hey! Hello! This is a nonsensical form served by Mould!
-form-bg             = wheat
-form-titlecolor     = purple
-form-fg             = black
-form-user           = mouldy
-form-password       = ohi
+form-title           = Nonsensical Form
+form-desc            = Hey! Hello! This is a nonsensical form served by Mould!
+form-bg              = wheat
+form-titlecolor      = purple
+form-fg              = black
+form-user            = mouldy
+form-password        = ohi
 !input[Name]         = Preferred moniker
-hidden[processed] = false
-textarea[Address]   = Your fediverse residence, else null
-number[Moni]#amount                 = min=1, max=100, value=1
-radio[Sky type]                                         = Sunny, Rainy, Moony
-form-paragraph = just an explanatory paragraph :)
-email[Email address]         = .*@.*\..*
+hidden[processed]    = false
+textarea[Address]    = Your fediverse residence, else null
+number[Money]#amount = min=1, max=100, value=1
+radio[Sky type]      = Sunny, Rainy, Moony
+form-paragraph       = just an explanatory paragraph :)
+email[Email address] = .*@.*\..*

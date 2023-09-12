@@ -51,16 +51,25 @@ form-titlecolor     = purple
 form-fg             = black
 input[Name]         = Preferred moniker
 textarea[Address]   = Your fediverse residence, else null
-number[Moni]#amount = min=1, max=100, value=1
+number[Money]#amount = min=1, max=100, value=1
 radio[Sky type]     = Sunny, Rainy, Moony
 ```
 
-* On the very left of the equals (=) sign is the **element**. Elements are a mix of html form elements (`input`, `textarea`) and elements for controlling themes (`form-bg`) or page titles (`form-title`)of the form (this latter group has the prefix `form-`). 
-  * Examples: `input`, `radio`, `form-title`, `textarea`
+Or generically:
+
+``` 
+<element>[<title>]#<key> = <content>
+```
+
+* **Elements** are on the very left of the equals sign. Elements are a mix of html form elements (`input`, `textarea`) and elements for controlling themes (`form-bg`) or page titles (`form-title`) of the form. This latter group has the prefix `form-`. 
+  * Examples: `input`, `radio`, `textarea`, `form-title`, 
+  * You can make a form element be **required**, and blocking submission until filled, by prefixing the element name with an exclamation sign: `!textarea`
 * `= <stuff on the right side>` contains the **content** of the specified element. Typically, this will be used as
-  part of the form element's placeholder, but in some cases (range, radio) it will set options,
-  and in others (form-bg/form-fg) it will set colours or the page title (`form-title`).
-* `[title]` sets the **title** that will be used for that form element's label
+  part of the form element's placeholder
+  * In some cases (range, radio) the contents will set options on those elements, 
+  * in others (form-bg/form-fg) the contents will set colours or the page title (`form-title`).
+* `[title]` sets the **title** of the form element label. 
+    * Example: `email[Email address]` will create a html `input[email]` element with an adjacent visible label of `Email address`
 * `#key` sets an explicit **key**, which will be used instead of the title for things like keys on the input (useful if you want shorter html ids)
 
 Currently supported html form elements:
@@ -81,10 +90,9 @@ Currently supported html form elements:
 
 ## Basic auth: Password protection
 
-Mould has support for [http basic
-authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) with the
-`form-password` and `form-user` form options. To enable basic auth set at least
-`form-password` in the form syntax input (default user: `mouldy`).
+Mould has support for [http basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) with the
+`form-password` and `form-user` form options. To enable basic auth set at least `form-password`
+in the form syntax input (default user: `mouldy`).
 
 Basic auth should be used in combination with https / TLS secured connections to prevent
 snooping the set password (http specifies that basic credentials are passed in plaintext with
