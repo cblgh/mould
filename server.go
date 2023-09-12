@@ -81,6 +81,7 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	}
 	if req.Method == "POST" {
 		answer := myform.FormAnswer{}
+		// TODO (2023-09-12): include form validation in ParsePost based on required attributes
 		answer.ParsePost(req)
 		fmt.Println("received a POST")
 		// we're gonna do a lil tricky trick to get a nicer json format to persist
@@ -143,7 +144,12 @@ func readPersistedData() {
 		fmt.Println("error reading persisted form data", err)
 		return
 	}
-	err = json.Unmarshal(data, &responses)
+	var temp map[string]map[string]string
+	// unmarshal into a temp map to make sure keys that are deleted on disk, but not in the map `responses`, are
+	// correctly kept deleted. Unmarshal's behaviour is to keep the existing keys of a map, not to reallocate a new map
+	// and fill with the new values being unmarshalled
+	err = json.Unmarshal(data, &temp)
+	responses = temp
 	if err != nil {
 		fmt.Println("error unmarshalling persisted form data", err)
 		return
