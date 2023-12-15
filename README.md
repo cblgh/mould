@@ -61,31 +61,35 @@ Or generically:
 <element>[<title>]#<key> = <content>
 ```
 
-* **Elements** are on the very left of the equals sign. Elements are a mix of html form elements (`input`, `textarea`) and elements for controlling themes (`form-bg`) or page titles (`form-title`) of the form. This latter group has the prefix `form-`. 
-  * Examples: `input`, `radio`, `textarea`, `form-title`, 
-  * You can make a form element be **required**, and blocking submission until filled, by prefixing the element name with an exclamation sign: `!textarea`
-* `= <stuff on the right side>` contains the **content** of the specified element. Typically, this will be used as
-  part of the form element's placeholder
-  * In some cases (range, radio) the contents will set options on those elements, 
-  * in others (form-bg/form-fg) the contents will set colours or the page title (`form-title`).
-* `[title]` sets the **title** of the form element label. 
-    * Example: `email[Email address]` will create a html `input[email]` element with an adjacent visible label of `Email address`
-* `#key` sets an explicit **key**, which will be used instead of the title for things like keys on the input (useful if you want shorter html ids)
+**Elements** are on the very left of the equals sign. Elements are a mix of html form elements (`input`, `textarea`) and elements for controlling themes (`form-bg`) or page titles (`form-title`) of the form. This latter group has the prefix `form-`. 
 
-Currently supported html form elements:
+Examples: `input`, `radio`, `textarea`, `form-title`, 
 
-* input[text] as `input`
-* textarea as `textarea`
-* input[range] as `range`
-* input[number] as `number`
-* radio buttons as `radio`
-* input[hidden] as `hidden`
-* required elements by prefixing a form element with `!`
-    * example: `!input[Your favourite tea] = compulsory tea information here` 
-* input[email] as `email`
+**required**: You can make a form element be **required**, and blocking submission until filled, by prefixing the element name with an exclamation sign: `!textarea`
+
+**content**, from above, contains the content of the specified element. Typically, this will be used as part of the form element's `placeholder` attribute.
+In some cases (`range`, `radio`) the contents will set options on those elements, in others (`form-bg`/`form-fg`) the contents will set colours or the page title (`form-title`).
+
+`[title]` sets the **title** of the form element's corresponding `<label>`. 
+
+Example: `email[Email address]` creates an html `input[email]` element with an adjacent visible label of `Email address`.
+
+`#key` sets an explicit **key**, which will be used instead of the title for things like keys on the input (useful if you want shorter html ids)
+
+### Supported form elements
+
+* `<input type="text">` as `input`
+* `<textarea>` as `textarea`
+* `<input type="range">` as `range`
+* `<input type="number">` as `number`
+* `<input type="radio">` (radio buttons) as `radio`
+* `<input type="hidden">` as `hidden`
+* require elements by prefixing a form element with `!` (exclamation mark)
+    * `!input[Your favourite tea] = compulsory tea information here` 
+* `<input type="email">` as `email`
     * the right-hand side of the email element is the regex pattern that validates it
     * `email[Email address] = .*@.*\..*
-* paragraph elements as `form-paragraph`
+* `<p>` (paragraph) as `form-paragraph`
 * ~~checkboxes~~
 
 ## Basic auth: Password protection
@@ -97,6 +101,10 @@ in the form syntax input (default user: `mouldy`).
 Basic auth should be used in combination with https / TLS secured connections to prevent
 snooping the set password (http specifies that basic credentials are passed in plaintext with
 the request).
+
+## Mould on the web
+
+Mould is being used to facilitate sticker sharing for a community, see the [repository](https://git.sr.ht/~rostiger/merveilles_stickers) for how its been setup and consider adapting the script [`mould-it`](https://git.sr.ht/~rostiger/merveilles_stickers/tree/main/item/mould-it) if you are considering using Mould. 
 
 ## How does it work?
 Messily! 
