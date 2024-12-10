@@ -88,7 +88,7 @@ Example: `email[Email address]` creates an html `input[email]` element with an a
     * `!input[Your favourite tea] = compulsory tea information here` 
 * `<input type="email">` as `email`
     * the right-hand side of the email element is the regex pattern that validates it
-    * `email[Email address] = .*@.*\..*
+    * `email[Email address] = .*@.*\..*`
 * `<p>` (paragraph) as `form-paragraph`
 * ~~checkboxes~~
 
